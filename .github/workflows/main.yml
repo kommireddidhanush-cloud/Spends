@@ -20,7 +20,7 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Scaffolding and Injecting Native Engine
+      - name: Scaffolding and Patching Project
         run: |
           mkdir -p temp_src
           cp main.dart temp_src/main.dart 2>/dev/null || true
@@ -31,7 +31,10 @@ jobs:
           cd app_scaffold
           flutter pub add telephony intl
           
-          # Add SMS Permissions to AndroidManifest.xml
+          # Fix missing namespace in telephony plugin for modern Gradle
+          echo "subprojects { subproject -> afterEvaluate { if (subproject.hasProperty('android')) { if (!subproject.android.hasProperty('namespace') || subproject.android.namespace == null) { subproject.android { namespace subproject.group } } } } }" >> android/build.gradle
+          
+          # Add SMS permissions
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECEIVE_SMS"/>\n    <uses-permission android:name="android.permission.READ_SMS"/>' android/app/src/main/AndroidManifest.xml
 
       - name: Build Standalone APK
