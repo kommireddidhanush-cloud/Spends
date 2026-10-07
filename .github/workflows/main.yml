@@ -12,7 +12,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
 
       - name: Set up Flutter
@@ -20,15 +20,27 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Scaffolding and Injecting Native Engine
+        run: |
+          mkdir -p temp_src
+          cp main.dart temp_src/main.dart 2>/dev/null || true
+          cp lib/main.dart temp_src/main.dart 2>/dev/null || true
+          flutter create --org com.spends --project-name spends app_scaffold
+          rm -rf app_scaffold/lib/main.dart
+          cp temp_src/main.dart app_scaffold/lib/main.dart
+          cd app_scaffold
+          flutter pub add telephony intl
+          
+          # Add SMS Permissions to AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECEIVE_SMS"/>\n    <uses-permission android:name="android.permission.READ_SMS"/>' android/app/src/main/AndroidManifest.xml
 
-      - name: Build APK
-        run: flutter build apk --release
+      - name: Build Standalone APK
+        run: |
+          cd app_scaffold
+          flutter build apk --release
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: spends-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          
+          name: spends-app
+          path: app_scaffold/build/app/outputs/flutter-apk/app-release.apk
