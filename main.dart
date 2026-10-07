@@ -1,8 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:telephony/telephony.dart';
-import 'package:intl/intl.dart';
-
+import 'package:another_telephony/telephony.dart';
 @pragma('vm:entry-point')
 void backgroundMessageHandler(SmsMessage message) {
   final body = message.body ?? '';
