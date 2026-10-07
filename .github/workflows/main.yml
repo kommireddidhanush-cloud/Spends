@@ -31,8 +31,29 @@ jobs:
           cd app_scaffold
           flutter pub add telephony intl
           
-          # Fix missing namespace in telephony plugin for modern Gradle
-          echo "subprojects { subproject -> afterEvaluate { if (subproject.hasProperty('android')) { if (!subproject.android.hasProperty('namespace') || subproject.android.namespace == null) { subproject.android { namespace subproject.group } } } } }" >> android/build.gradle
+          # Fix missing namespace & align JVM Kotlin compatibility to 17
+          cat << 'EOF' >> android/build.gradle
+          subprojects { subproject ->
+              afterEvaluate {
+                  if (subproject.hasProperty('android')) {
+                      if (!subproject.android.hasProperty('namespace') || subproject.android.namespace == null) {
+                          subproject.android { namespace subproject.group }
+                      }
+                      subproject.android {
+                          compileOptions {
+                              sourceCompatibility JavaVersion.VERSION_17
+                              targetCompatibility JavaVersion.VERSION_17
+                          }
+                      }
+                  }
+                  tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                      kotlinOptions {
+                          jvmTarget = "17"
+                      }
+                  }
+              }
+          }
+          EOF
           
           # Add SMS permissions
           sed -i '/<application/i \    <uses-permission android:name="android.permission.RECEIVE_SMS"/>\n    <uses-permission android:name="android.permission.READ_SMS"/>' android/app/src/main/AndroidManifest.xml
